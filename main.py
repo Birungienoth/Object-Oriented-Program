@@ -5,7 +5,10 @@ app = Flask(__name__)
 app.secret_key = "mobile-money-demo-key"
 
 
-# Encapsulation
+# ============================================================
+# ENCAPSULATION
+# ============================================================
+
 class User:
     def __init__(self, pin):
         self.__pin = pin
@@ -23,13 +26,17 @@ class Customer(User):
         return self.__balance
 
     def withdraw(self, amount):
-        if amount <= self.__balance:
+        # Prevent zero, negative and insufficient-balance transactions
+        if amount > 0 and amount <= self.__balance:
             self.__balance -= amount
             return True
         return False
 
 
-# Abstraction
+# ============================================================
+# ABSTRACTION
+# ============================================================
+
 class Transaction(ABC):
 
     @abstractmethod
@@ -37,7 +44,10 @@ class Transaction(ABC):
         pass
 
 
-# Polymorphism
+# ============================================================
+# POLYMORPHISM
+# ============================================================
+
 class Payment(Transaction):
     def process(self, customer, amount):
         if customer.withdraw(amount):
@@ -59,82 +69,164 @@ class Transfer(Transaction):
         return "The amount on the account is too low to complete your transaction"
 
 
+# ============================================================
+# FLASK APPLICATION
+# ============================================================
+
 @app.route("/", methods=["GET", "POST"])
 def index():
+
     message = ""
     error = ""
 
     if request.method == "POST":
+
         action = request.form.get("action")
 
-        # Create account
+        # ----------------------------------------------------
+        # CREATE ACCOUNT
+        # ----------------------------------------------------
+
         if action == "setup":
+
             code = request.form.get("code", "")
             balance_text = request.form.get("balance", "")
             pin = request.form.get("pin", "")
 
             if code != "*222#":
                 error = "The option you entered doesn't exist. Please use *222#."
+
             elif not balance_text:
                 error = "Please enter a starting balance."
+
             elif not balance_text.replace(".", "", 1).isdigit():
                 error = "Please enter a valid starting balance."
+
+            elif float(balance_text) <= 0:
+                error = "Starting balance must be greater than zero."
+
             elif not (pin.isdigit() and len(pin) == 3):
                 error = "PIN must be 3 digits."
+
             else:
                 session["balance"] = float(balance_text)
                 session["pin"] = pin
                 session["started"] = True
+
                 message = "Account created successfully."
 
-        # Check balance
+        # ----------------------------------------------------
+        # CHECK BALANCE
+        # ----------------------------------------------------
+
         elif action == "balance":
+
             if session.get("started"):
-                customer = Customer(session["balance"], session["pin"])
-                message = f"Your account balance is: UGX {customer.get_balance():,.0f}"
+
+                customer = Customer(
+                    session["balance"],
+                    session["pin"]
+                )
+
+                message = (
+                    f"Your account balance is: "
+                    f"UGX {customer.get_balance():,.0f}"
+                )
+
             else:
                 error = "Please create your account first."
 
-        # Payment, withdrawal and transfer
+        # ----------------------------------------------------
+        # PAYMENT, WITHDRAWAL AND TRANSFER
+        # ----------------------------------------------------
+
         elif action in ("payment", "withdrawal", "transfer"):
+
             if not session.get("started"):
+
                 error = "Please create your account first."
+
             else:
+
                 try:
-                    amount = float(request.form.get("amount", "0"))
+                    amount = float(
+                        request.form.get("amount", "0")
+                    )
                     pin = request.form.get("pin", "")
+
                 except ValueError:
+
                     amount = 0
                     pin = ""
 
-                customer = Customer(session["balance"], session["pin"])
+                # Validate amount
+                if amount <= 0:
 
-                if customer.check_pin(pin):
-
-                    if action == "payment":
-                        result = Payment().process(customer, amount)
-
-                    elif action == "withdrawal":
-                        result = Withdrawal().process(customer, amount)
-
-                    else:
-                        result = Transfer().process(customer, amount)
-
-                    if "too low" in result:
-                        error = result
-                    else:
-                        message = result
-
-                    # Save updated balance
-                    session["balance"] = customer.get_balance()
+                    error = "Transaction amount must be greater than zero."
 
                 else:
-                    error = "Incorrect PIN. Please try again."
 
-        # Exit
+                    customer = Customer(
+                        session["balance"],
+                        session["pin"]
+                    )
+
+                    # Check PIN
+                    if customer.check_pin(pin):
+
+                        # Select transaction type
+                        if action == "payment":
+
+                            result = Payment().process(
+                                customer,
+                                amount
+                            )
+
+                        elif action == "withdrawal":
+
+                            result = Withdrawal().process(
+                                customer,
+                                amount
+                            )
+
+                        else:
+
+                            result = Transfer().process(
+                                customer,
+                                amount
+                            )
+
+                        # Display result
+                        if "too low" in result:
+
+                            error = result
+
+                        else:
+
+                            message = result
+
+                        # Save updated balance
+                        session["balance"] = (
+                            customer.get_balance()
+                        )
+
+                    else:
+
+                        error = "Incorrect PIN. Please try again."
+
+        # ----------------------------------------------------
+        # EXIT
+        # ----------------------------------------------------
+
         elif action == "exit":
+
             session.clear()
+
             message = "Thank you for walking with us."
+
+    # --------------------------------------------------------
+    # DISPLAY PAGE
+    # --------------------------------------------------------
 
     return render_template(
         "index.html",
@@ -144,6 +236,10 @@ def index():
         current_balance=session.get("balance")
     )
 
+
+# ============================================================
+# RUN APPLICATION
+# ============================================================
 
 if __name__ == "__main__":
     app.run(debug=True)
