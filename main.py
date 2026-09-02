@@ -94,30 +94,43 @@ def index():
                 message = f"Your account balance is: UGX {customer.get_balance():,.0f}"
             else:
                 error = "Please create your account first."
-
         # Payment, withdrawal and transfer
-        elif action in ("payment", "withdrawal", "transfer"):
-            if not session.get("started"):
-                error = "Please create your account first."
+elif action in ("payment", "withdrawal", "transfer"):
+    if not session.get("started"):
+        error = "Please create your account first."
+    else:
+        try:
+            amount = float(request.form.get("amount", "0"))
+            pin = request.form.get("pin", "")
+        except ValueError:
+            amount = 0
+            pin = ""
+
+        customer = Customer(session["balance"], session["pin"])
+
+        if customer.check_pin(pin):
+
+            if action == "payment":
+                result = Payment().process(customer, amount)
+
+            elif action == "withdrawal":
+                result = Withdrawal().process(customer, amount)
+
             else:
-                try:
-                    amount = float(request.form.get("amount", "0"))
-                    pin = request.form.get("pin", "")
-                except ValueError:
-                    amount = 0
-                    pin = ""
+                result = Transfer().process(customer, amount)
 
-                customer = Customer(session["balance"], session["pin"])
+            # Show insufficient balance as an error
+            if "too low" in result:
+                error = result
+            else:
+                message = result
 
-                if customer.check_pin(pin):
-                    if action == "payment":
-                        message = Payment().process(customer, amount)
-                    elif action == "withdrawal":
-                        message = Withdrawal().process(customer, amount)
-                    else:
-                        message = Transfer().process(customer, amount)
+            # Save the updated balance
+            session["balance"] = customer.get_balance()
 
-                    session["balance"] = customer.get_balance()
+        else:
+            error = "Incorrect PIN. Please try again."
+       
 
         # Exit
         elif action == "exit":
@@ -125,11 +138,12 @@ def index():
             message = "Thank you for walking with us."
 
     return render_template(
-        "index.html",
-        started=session.get("started", False),
-        message=message,
-        error=error
-    )
+    "index.html",
+    started=session.get("started", False),
+    message=message,
+    error=error,
+    current_balance=session.get("balance")
+)
 
 
 if __name__ == "__main__":
