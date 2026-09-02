@@ -112,6 +112,13 @@
         </div>
     {% endif %}
 
+    {% if started and current_balance is not none %}
+    <div class="message">
+        <strong>Current Balance:</strong>
+        UGX {{ "{:,.0f}".format(current_balance) }}
+    </div>
+{% endif %}
+
     {% if not started %}
 
         <h2>Access Services</h2>
@@ -175,7 +182,7 @@
 
             <form method="POST">
 
-                <input type="hidden" name="action" value="withdraw">
+               <input type="hidden" name="action" value="withdrawal">
 
                 <label>Withdrawal Amount (UGX)</label>
                 <input type="number" name="amount" min="0" required>
