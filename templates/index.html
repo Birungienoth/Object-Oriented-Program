@@ -1,0 +1,36 @@
+Mobile Money System
+{% if message %}
+{{ message }}
+{% endif %} {% if error %}
+{{ error }}
+{% endif %} {% if not started %}
+Access Services
+USSD Code 
+*222#
+ Starting Balance (UGX) 
+ Create 3-digit PIN 
+ Start
+{% else %}
+Available Services
+1. Check Balance
+2. Make Payment
+Payment number
+ 
+Payment amount (UGX)
+ 
+Enter PIN
+ Make Payment
+3. Withdraw Money
+Withdrawal amount (UGX)
+ 
+Enter PIN
+ Withdraw
+4. Transfer Money
+Recipient phone number
+ 
+Transfer amount (UGX)
+ 
+Enter PIN
+ Transfer
+5. Exit
+{% endif %}
