@@ -112,13 +112,6 @@
         </div>
     {% endif %}
 
-    {% if started and current_balance is not none %}
-    <div class="message">
-        <strong>Current Balance:</strong>
-        UGX {{ "{:,.0f}".format(current_balance) }}
-    </div>
-{% endif %}
-
     {% if not started %}
 
         <h2>Access Services</h2>
