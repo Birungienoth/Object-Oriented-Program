@@ -114,23 +114,18 @@
 
     {% if not started %}
 
-        <h2>Access Services</h2>
+    <h2>Dial USSD Code</h2>
 
-        <form method="POST">
+    <form method="POST">
 
-            <input type="hidden" name="action" value="setup">
-            <input type="hidden" name="code" value="*222#">
+        <input type="hidden" name="action" value="dial">
 
-            <label>Starting Balance (UGX)</label>
-            <input type="number" name="balance" min="0" required>
+        <label>Enter USSD Code</label>
+        <input type="text" name="code" placeholder="*222#" required>
 
-            <label>Create 3-digit PIN</label>
-            <input type="password" name="pin" minlength="3" maxlength="3"
-                   pattern="[0-9]{3}" required>
+        <button type="submit">Dial</button>
 
-            <button type="submit">Start</button>
-
-        </form>
+    </form>
 
     {% else %}
 
