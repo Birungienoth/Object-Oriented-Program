@@ -1,25 +1,30 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile Money System</title>
+
+    <title>Mobile Money</title>
 
     <style>
+
         body {
             font-family: Arial, sans-serif;
-            background: #f2f2f2;
+            background-color: #f2f2f2;
             margin: 0;
-            padding: 30px;
+            padding: 0;
         }
 
         .container {
-            max-width: 650px;
-            margin: auto;
-            background: white;
+            width: 90%;
+            max-width: 500px;
+            margin: 50px auto;
+            background-color: white;
             padding: 30px;
             border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
         h1 {
@@ -27,25 +32,17 @@
             margin-bottom: 10px;
         }
 
-        .ussd {
-            text-align: center;
-            font-size: 18px;
-            margin-bottom: 25px;
-            color: #555;
-        }
-
         h2 {
-            margin-top: 25px;
+            text-align: center;
         }
 
         label {
             display: block;
-            margin-top: 12px;
+            margin-top: 15px;
             margin-bottom: 5px;
-            font-weight: bold;
         }
 
-        input, select {
+        input {
             width: 100%;
             padding: 10px;
             box-sizing: border-box;
@@ -54,169 +51,359 @@
         }
 
         button {
+            width: 100%;
+            padding: 11px;
             margin-top: 15px;
-            padding: 11px 20px;
             border: none;
             border-radius: 5px;
-            background: #222;
-            color: white;
             cursor: pointer;
-            font-size: 15px;
+            background-color: #333;
+            color: white;
         }
 
         button:hover {
-            background: #444;
+            background-color: #555;
         }
 
         .message {
+            background-color: #d4edda;
+            color: #155724;
             padding: 12px;
             margin-bottom: 15px;
-            background: #e8f5e9;
             border-radius: 5px;
         }
 
         .error {
+            background-color: #f8d7da;
+            color: #721c24;
             padding: 12px;
             margin-bottom: 15px;
-            background: #ffebee;
             border-radius: 5px;
         }
 
-        .service {
-            border-top: 1px solid #ddd;
-            margin-top: 25px;
-            padding-top: 20px;
+        .balance {
+            background-color: #e8f5e9;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 5px;
+            text-align: center;
         }
+
+        .service {
+            margin-top: 20px;
+        }
+
+        .service h3 {
+            margin-bottom: 15px;
+        }
+
+        .section {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid #ddd;
+        }
+
     </style>
+
 </head>
+
 
 <body>
 
 <div class="container">
 
-    <h1>Mobile Money System</h1>
+    <h1>Welcome to Mobile Money</h1>
 
-    <div class="ussd">
-        USSD Code: <strong>*222#</strong>
-    </div>
+
+    <!-- Display messages -->
 
     {% if message %}
+
         <div class="message">
             {{ message }}
         </div>
+
     {% endif %}
 
+
     {% if error %}
+
         <div class="error">
             {{ error }}
         </div>
+
     {% endif %}
 
-    {% if not started %}
 
-    <h2>Dial USSD Code</h2>
 
-    <form method="POST">
+    <!-- ================================================== -->
+    <!-- DIAL USSD CODE -->
+    <!-- ================================================== -->
 
-        <input type="hidden" name="action" value="dial">
+    {% if not dialed %}
 
-        <label>Enter USSD Code</label>
-        <input type="text" name="code" placeholder="*222#" required>
+        <h2>Dial USSD Code</h2>
 
-        <button type="submit">Dial</button>
+        <form method="POST">
 
-    </form>
+            <input type="hidden" name="action" value="dial">
+
+            <label>Enter USSD Code</label>
+
+            <input
+                type="text"
+                name="code"
+                placeholder="*222#"
+                required
+            >
+
+            <button type="submit">
+                Dial
+            </button>
+
+        </form>
+
+
+    <!-- ================================================== -->
+    <!-- ENTER PIN -->
+    <!-- ================================================== -->
+
+    {% elif not authenticated %}
+
+        <h2>Enter PIN</h2>
+
+        <form method="POST">
+
+            <input type="hidden" name="action" value="login">
+
+            <label>Enter your PIN</label>
+
+            <input
+                type="password"
+                name="pin"
+                placeholder="Enter 3-digit PIN"
+                minlength="3"
+                maxlength="3"
+                pattern="[0-9]{3}"
+                required
+            >
+
+            <button type="submit">
+                Continue
+            </button>
+
+        </form>
+
+
+    <!-- ================================================== -->
+    <!-- AVAILABLE SERVICES -->
+    <!-- ================================================== -->
 
     {% else %}
 
-        <h2>Available Services</h2>
+        {% if show_balance and current_balance is not none %}
 
-        <div class="service">
-            <h3>1. Check Balance</h3>
+            <div class="balance">
 
-            <form method="POST">
-                <input type="hidden" name="action" value="balance">
-                <button type="submit">Check Balance</button>
-            </form>
-        </div>
+                <strong>Current Balance:</strong>
 
+                <br>
 
-        <div class="service">
-            <h3>2. Make Payment</h3>
+                UGX {{ "{:,.0f}".format(current_balance) }}
 
-            <form method="POST">
+            </div>
 
-                <input type="hidden" name="action" value="payment">
-
-                <label>Payment Number</label>
-                <input type="text" name="number" required>
-
-                <label>Payment Amount (UGX)</label>
-                <input type="number" name="amount" min="0" required>
-
-                <label>Enter PIN</label>
-                <input type="password" name="pin"
-                       minlength="3" maxlength="3"
-                       pattern="[0-9]{3}" required>
-
-                <button type="submit">Make Payment</button>
-
-            </form>
-        </div>
+        {% endif %}
 
 
         <div class="service">
-            <h3>3. Withdraw Money</h3>
 
-            <form method="POST">
-
-               <input type="hidden" name="action" value="withdrawal">
-
-                <label>Withdrawal Amount (UGX)</label>
-                <input type="number" name="amount" min="0" required>
-
-                <label>Enter PIN</label>
-                <input type="password" name="pin"
-                       minlength="3" maxlength="3"
-                       pattern="[0-9]{3}" required>
-
-                <button type="submit">Withdraw</button>
-
-            </form>
-        </div>
+            <h2>Available Services</h2>
 
 
-        <div class="service">
-            <h3>4. Transfer Money</h3>
+            <!-- CHECK BALANCE -->
 
-            <form method="POST">
+            <div class="section">
 
-                <input type="hidden" name="action" value="transfer">
+                <h3>1. Check Balance</h3>
 
-                <label>Recipient Phone Number</label>
-                <input type="text" name="recipient" required>
+                <form method="POST">
 
-                <label>Transfer Amount (UGX)</label>
-                <input type="number" name="amount" min="0" required>
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="balance"
+                    >
 
-                <label>Enter PIN</label>
-                <input type="password" name="pin"
-                       minlength="3" maxlength="3"
-                       pattern="[0-9]{3}" required>
+                    <button type="submit">
+                        Check Balance
+                    </button>
 
-                <button type="submit">Transfer</button>
+                </form>
 
-            </form>
-        </div>
+            </div>
 
 
-        <div class="service">
-            <h3>5. Exit</h3>
+            <!-- MAKE PAYMENT -->
 
-            <form method="POST">
-                <input type="hidden" name="action" value="exit">
-                <button type="submit">Exit</button>
-            </form>
+            <div class="section">
+
+                <h3>2. Make Payment</h3>
+
+                <form method="POST">
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="payment"
+                    >
+
+                    <label>Enter payment amount</label>
+
+                    <input
+                        type="number"
+                        name="amount"
+                        step="any"
+                        required
+                    >
+
+                    <label>Enter PIN</label>
+
+                    <input
+                        type="password"
+                        name="pin"
+                        minlength="3"
+                        maxlength="3"
+                        pattern="[0-9]{3}"
+                        required
+                    >
+
+                    <button type="submit">
+                        Make Payment
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- WITHDRAW MONEY -->
+
+            <div class="section">
+
+                <h3>3. Withdraw Money</h3>
+
+                <form method="POST">
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="withdrawal"
+                    >
+
+                    <label>Enter withdrawal amount</label>
+
+                    <input
+                        type="number"
+                        name="amount"
+                        step="any"
+                        required
+                    >
+
+                    <label>Enter PIN</label>
+
+                    <input
+                        type="password"
+                        name="pin"
+                        minlength="3"
+                        maxlength="3"
+                        pattern="[0-9]{3}"
+                        required
+                    >
+
+                    <button type="submit">
+                        Withdraw Money
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- TRANSFER MONEY -->
+
+            <div class="section">
+
+                <h3>4. Transfer Money</h3>
+
+                <form method="POST">
+
+                    <label>Recipient Phone Number</label>
+
+                    <input
+                        type="text"
+                        name="recipient"
+                        placeholder="07XXXXXXXX"
+                        required
+                    >
+
+                    <label>Enter transfer amount</label>
+
+                    <input
+                        type="number"
+                        name="amount"
+                        step="any"
+                        required
+                    >
+
+                    <label>Enter PIN</label>
+
+                    <input
+                        type="password"
+                        name="pin"
+                        minlength="3"
+                        maxlength="3"
+                        pattern="[0-9]{3}"
+                        required
+                    >
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="transfer"
+                    >
+
+                    <button type="submit">
+                        Transfer Money
+                    </button>
+
+                </form>
+
+            </div>
+
+
+            <!-- EXIT -->
+
+            <div class="section">
+
+                <h3>5. Exit</h3>
+
+                <form method="POST">
+
+                    <input
+                        type="hidden"
+                        name="action"
+                        value="exit"
+                    >
+
+                    <button type="submit">
+                        Exit
+                    </button>
+
+                </form>
+
+            </div>
+
         </div>
 
     {% endif %}
@@ -224,4 +411,5 @@
 </div>
 
 </body>
+
 </html>
